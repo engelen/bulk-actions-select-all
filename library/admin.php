@@ -74,6 +74,16 @@ class BASA_Admin {
 	public function is_action_restricted_posts( $action ) {
 		$restricted = $action == 'edit' ? true : false;
 
+		/**
+		 * Filter the restricted bulk actions for the posts overview. Restricted actions are those
+		 * that are not suited for "Select all" functionality. If false is returned, the action
+		 * will be applied to the original selected items, not all selected items
+		 *
+		 * @since 1.2
+		 *
+		 * @param bool $restricted Whether the action is restricted
+		 * @param string $action Action to be executed
+		 */
 		return apply_filters( 'basa/is_action_restricted/posts', $restricted, $action );
 	}
 
@@ -88,6 +98,17 @@ class BASA_Admin {
 	public function is_action_restricted_terms( $action ) {
 		$restricted = false;
 		
+
+		/**
+		 * Filter the restricted bulk actions for the terms overview. Restricted actions are those
+		 * that are not suited for "Select all" functionality. If false is returned, the action
+		 * will be applied to the original selected items, not all selected items
+		 *
+		 * @since 1.2
+		 *
+		 * @param bool $restricted Whether the action is restricted
+		 * @param string $action Action to be executed
+		 */
 		return apply_filters( 'basa/is_action_restricted/terms', $restricted, $action );
 	}
 
