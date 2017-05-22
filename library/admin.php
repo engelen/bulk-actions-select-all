@@ -64,48 +64,95 @@ class BASA_Admin {
 	}
 
 	/**
-	 * Handle all operations associated with the bulk actions this plugin provides.
+	 * Check whether a bulk action in the posts screen is restricted (i.e. should not be executed
+	 * on all posts when BASA is used)
 	 *
-	 * @since 1.0
+	 * @since 1.2
+	 *
+	 * @param string $action Bulk action to be executed
 	 */
-	public function handle_bulkactions( $action, $result ) {
+	public function is_action_restricted_posts( $action ) {
+		$restricted = $action == 'edit' ? true : false;
+
+		return apply_filters( 'basa/is_action_restricted/posts', $restricted, $action );
+	}
+
+	/**
+	 * Check whether a bulk action in the terms screen is restricted (i.e. should not be executed
+	 * on all posts when BASA is used)
+	 *
+	 * @since 1.2
+	 *
+	 * @param string $action Bulk action to be executed
+	 */
+	public function is_action_restricted_terms( $action ) {
+		$restricted = false;
+		
+		return apply_filters( 'basa/is_action_restricted/posts', $restricted, $action );
+	}
+
+	/**
+	 * Handle the possible selection of all objects for the posts list table
+	 *
+	 * @since 1.2
+	 */
+	public function handle_bulkactions_posts() {
 		global $wp_list_table, $wp_query;
 
-		$bulk_object_type = false;
-
-		if ( $action == 'bulk-posts' ) $bulk_object_type = 'post';
-		if ( $action == 'bulk-tags' ) $bulk_object_type = 'term';
-
-		// Check current results of admin referer check and check action
-		if ( ! $result || ! $bulk_object_type ) {
+		if ( ! $wp_list_table ) {
 			return;
 		}
 
-		// Check list table object
-		if ( empty( $wp_list_table ) ) {
+		// Check whether bulk action is allowed
+		if ( $this->is_action_restricted_posts( $wp_list_table->current_action() ) ) {
 			return;
 		}
 
-		// Check list table bulk action
-		if (
-			( $bulk_object_type == 'post' && ! in_array( $wp_list_table->current_action(), array( 'trash', 'untrash', 'delete' ) ) )
-			||
-			( $bulk_object_type == 'term' && ! in_array( $wp_list_table->current_action(), array( 'bulk-delete' ) ) )
-		) {
+		// Check whether list of object IDs is filled
+		if ( empty( $_REQUEST['post'] ) ) {
 			return;
 		}
 
-		// Check bulk delete action parameters (list of object IDs)
-		if (
-			( $bulk_object_type == 'post' && empty( $_REQUEST['post'] ) )
-			||
-			( $bulk_object_type == 'term' && empty( $_REQUEST['delete_tags'] ) )
-		) {
+		// Check whether a number of items was passed
+		$num_items = intval( $_REQUEST['basa-num-items'] );
+
+		if ( ! $num_items ) {
 			return;
 		}
 
-		// Check whether "Select all" action was chosen
-		if ( empty( $_REQUEST['basa-selectall'] ) || empty( $_REQUEST['basa-num-items'] ) ) {
+		// Posts
+		add_filter( 'request', array( $this, 'request_all_ids' ) );
+		wp_edit_posts_query();
+		remove_filter( 'request', array( $this, 'request_all_ids' ) );
+
+		$num_posts = count( $wp_query->posts );
+
+		if ( $num_items != $num_posts ) {
+			return;
+		}
+
+		$_REQUEST['post'] = $wp_query->posts;
+	}
+
+	/**
+	 * Handle the possible selection of all objects for the terms list table
+	 *
+	 * @since 1.2
+	 */
+	public function handle_bulkactions_terms() {
+		global $wp_list_table;
+
+		if ( ! $wp_list_table ) {
+			return;
+		}
+
+		// Check whether bulk action is allowed
+		if ( $this->is_action_restricted_terms( $wp_list_table->current_action() ) ) {
+			return;
+		}
+
+		// Check whether list of object IDs is filled
+		if ( empty( $_REQUEST['delete_tags'] ) ) {
 			return;
 		}
 
@@ -119,51 +166,61 @@ class BASA_Admin {
 		// Check whether taxonomy and callback arguments were supplied
 		$wp_list_table->prepare_items();
 
-		if ( $bulk_object_type == 'term' && ( empty( $wp_list_table->callback_args ) || empty( $wp_list_table->screen->taxonomy ) ) ) {
+		if ( empty( $wp_list_table->callback_args ) || empty( $wp_list_table->screen->taxonomy ) ) {
 			return;
 		}
 
-		// Posts
-		if ( $bulk_object_type == 'post' ) {
-			add_filter( 'request', array( $this, 'request_all_ids' ) );
-			wp_edit_posts_query();
-			remove_filter( 'request', array( $this, 'request_all_ids' ) );
+		// Current taxomomy
+		$taxonomy = $wp_list_table->screen->taxonomy;
 
-			$num_posts = count( $wp_query->posts );
+		// Arguments for fetching terms
+		$args = wp_parse_args( $wp_list_table->callback_args, array(
+			'page' => 1,
+			'number' => 20,
+			'search' => '',
+			'hide_empty' => 0
+		) );
 
-			if ( $num_items != $num_posts ) {
-				return;
-			}
+		$args['number'] = 0;
+		$args['offset'] = 0;
+		$args['fields'] = 'ids';
+		unset( $args['page'] );
 
-			$_REQUEST['post'] = $wp_query->posts;
+		// Fetch terms
+		$terms = get_terms( $taxonomy, $args );
+
+		if ( $num_items != count( $terms ) ) {
+			return;
 		}
 
-		// Terms
-		if ( $bulk_object_type == 'term' ) {
-			// Current taxomomy
-			$taxonomy = $wp_list_table->screen->taxonomy;
+		$_REQUEST['delete_tags'] = $terms;
+	}
 
-			// Arguments for fetching terms
-			$args = wp_parse_args( $wp_list_table->callback_args, array(
-				'page' => 1,
-				'number' => 20,
-				'search' => '',
-				'hide_empty' => 0
-			) );
+	/**
+	 * Handle all operations associated with the bulk actions this plugin provides.
+	 *
+	 * @since 1.0
+	 */
+	public function handle_bulkactions( $action, $result ) {
+		global $wp_list_table, $wp_query;
 
-			$args['number'] = 0;
-			$args['offset'] = 0;
-			$args['fields'] = 'ids';
-			unset( $args['page'] );
+		// Check current results of admin referer. If it is an invalid request, don't proceed
+		if ( ! $result ) {
+			return;
+		}
 
-			// Fetch terms
-			$terms = get_terms( $taxonomy, $args );
+		// Check whether "Select all" action was chosen
+		if ( empty( $_REQUEST['basa-selectall'] ) || empty( $_REQUEST['basa-num-items'] ) ) {
+			return;
+		}
 
-			if ( $num_items != count( $terms ) ) {
-				return;
-			}
-
-			$_REQUEST['delete_tags'] = $terms;
+		switch ( $action ) {
+			case 'bulk-posts':
+				$this->handle_bulkactions_posts();
+				break;
+			case 'bulk-tags':
+				$this->handle_bulkactions_terms();
+				break;
 		}
 	}
 
