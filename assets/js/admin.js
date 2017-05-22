@@ -1,7 +1,7 @@
 jQuery( document ).ready( function( $ ) {
 	var list = $( '#the-list' );
 	var table = list.parents( 'table:first' );
-	var colspan = list.find( 'tr:first > *' ).length;
+	var colspan = list.find( 'tr:first > *:visible' ).length;
 
 	var notice_content = '';
 
@@ -52,5 +52,23 @@ jQuery( document ).ready( function( $ ) {
 			el_notice.hide();
 			el_notice.find( '[name="basa-selectall"]' ).val( '0' );
 		}
+	} );
+
+	// Update colspan of notice row when columns are shown/hidden
+	$( '.hide-column-tog' ).click( function() {
+		// Calculate current number of visible columns
+		var list = $( '#the-list' );
+		var colspan = list.find( 'tr:not(.basa-selectall):first > *:visible' ).length;
+
+		// Update with new state
+		if ( $( this ).is( ':checked' ) ) {
+			colspan += 1;
+		}
+		else {
+			colspan -= 1;
+		}
+
+		// Change colspan
+		list.find( '.basa-selectall > td' ).attr( 'colspan', colspan.toString() );
 	} );
 } );
