@@ -88,7 +88,7 @@ class BASA_Admin {
 	public function is_action_restricted_terms( $action ) {
 		$restricted = false;
 		
-		return apply_filters( 'basa/is_action_restricted/posts', $restricted, $action );
+		return apply_filters( 'basa/is_action_restricted/terms', $restricted, $action );
 	}
 
 	/**
