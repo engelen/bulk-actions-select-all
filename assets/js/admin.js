@@ -37,6 +37,11 @@ jQuery( document ).ready( function( $ ) {
 		}
 	} );
 
+	table.find( 'tbody .check-column input:checkbox' ).change( function() {
+			el_notice.hide();
+			el_notice.find( '[name="basa-selectall"]' ).val( '0' );
+	} );
+	
 	table.find( 'thead .column-cb input:checkbox, tfoot .column-cb input:checkbox' ).change( function() {
 		if ( $( this ).is( ':checked' ) ) {
 			el_notice.show();

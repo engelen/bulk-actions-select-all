@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: Bulk Actions Select All
-Version: 1.0
+Version: 1.1
 Description: Adds an option to the admin posts overview page to select all posts (instead of just the ones on the current page) to bulk trash, restore and delete posts
 Author: Jesper van Engelen
 Author URI: http://jespervanengelen.com
@@ -26,7 +26,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if access directly
 
-define( 'BASA_VERSION', 1.0 );
+define( 'BASA_VERSION', '1.1' );
 define( 'BASA_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'BASA_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
@@ -49,7 +49,7 @@ class BASA {
 	 * @access protected
 	 * @since 1.0
 	 */
-	protected $version = '1.0';
+	protected $version = '1.1';
 
 	/**
 	 * Admin class instance

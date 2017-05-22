@@ -1,4 +1,5 @@
-.basa-selectall {
+.basa-selectall,
+#wpbody .striped > tbody .basa-selectall {
 	display: none;
 	text-align: center;
 	background: #FFFFE0;

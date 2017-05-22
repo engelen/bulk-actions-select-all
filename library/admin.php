@@ -15,6 +15,8 @@ class BASA_Admin {
 	public $basa;
 
 	/**
+	 * Constructor. Set up object and add action and filter callbacks.
+	 *
 	 * @since 1.0
 	 */
 	public function __construct( BASA $basa ) {
@@ -26,6 +28,7 @@ class BASA_Admin {
 
 	/**
 	 * @since 1.0
+	 * @see action:admin_enqueue_scripts
 	 */
 	public function scripts( $hook ) {
 		global $wp_list_table;
@@ -33,7 +36,7 @@ class BASA_Admin {
 		wp_register_script( 'basa-admin', BASA_PLUGIN_URL . 'assets/js/admin.js', array( 'jquery' ) );
 		wp_register_style( 'basa-admin', BASA_PLUGIN_URL . 'assets/css/admin.css' );
 
-		if ( $hook == 'edit.php' && ! empty( $wp_list_table ) ) {
+		if ( in_array( $hook, array( 'edit.php', 'edit-tags.php' ) ) && ! empty( $wp_list_table ) ) {
 			$total_items = $wp_list_table->get_pagination_arg( 'total_items' );
 			$per_page = $wp_list_table->get_pagination_arg( 'per_page' );
 
@@ -61,46 +64,116 @@ class BASA_Admin {
 	}
 
 	/**
+	 * Handle all operations associated with the bulk actions this plugin provides.
+	 *
 	 * @since 1.0
 	 */
 	public function handle_bulkactions( $action, $result ) {
 		global $wp_list_table, $wp_query;
 
-		if ( ! $result || $action != 'bulk-posts' ) {
+		$bulk_object_type = false;
+
+		if ( $action == 'bulk-posts' ) $bulk_object_type = 'post';
+		if ( $action == 'bulk-tags' ) $bulk_object_type = 'term';
+
+		// Check current results of admin referer check and check action
+		if ( ! $result || ! $bulk_object_type ) {
 			return;
 		}
 
+		// Check list table object
 		if ( empty( $wp_list_table ) ) {
 			return;
 		}
 
-		if ( ! in_array( $wp_list_table->current_action(), array( 'trash', 'untrash', 'delete' ) ) || empty( $_REQUEST['post'] ) ) {
+		// Check list table bulk action
+		if (
+			( $bulk_object_type == 'post' && ! in_array( $wp_list_table->current_action(), array( 'trash', 'untrash', 'delete' ) ) )
+			||
+			( $bulk_object_type == 'term' && ! in_array( $wp_list_table->current_action(), array( 'bulk-delete' ) ) )
+		) {
 			return;
 		}
 
+		// Check bulk delete action parameters (list of object IDs)
+		if (
+			( $bulk_object_type == 'post' && empty( $_REQUEST['post'] ) )
+			||
+			( $bulk_object_type == 'term' && empty( $_REQUEST['delete_tags'] ) )
+		) {
+			return;
+		}
+
+		// Check whether "Select all" action was chosen
 		if ( empty( $_REQUEST['basa-selectall'] ) || empty( $_REQUEST['basa-num-items'] ) ) {
 			return;
 		}
 
+		// Check whether a number of items was passed
 		$num_items = intval( $_REQUEST['basa-num-items'] );
 
 		if ( ! $num_items ) {
 			return;
 		}
 
-		add_filter( 'request', array( $this, 'request_all_ids' ) );
-		wp_edit_posts_query();
-		remove_filter( 'request', array( $this, 'request_all_ids' ) );
+		// Check whether taxonomy and callback arguments were supplied
+		$wp_list_table->prepare_items();
 
-		$num_posts = count( $wp_query->posts );
-
-		if ( $num_items != $num_posts ) {
+		if ( $bulk_object_type == 'term' && ( empty( $wp_list_table->callback_args ) || empty( $wp_list_table->screen->taxonomy ) ) ) {
 			return;
 		}
 
-		$_REQUEST['post'] = $wp_query->posts;
+		// Posts
+		if ( $bulk_object_type == 'post' ) {
+			add_filter( 'request', array( $this, 'request_all_ids' ) );
+			wp_edit_posts_query();
+			remove_filter( 'request', array( $this, 'request_all_ids' ) );
+
+			$num_posts = count( $wp_query->posts );
+
+			if ( $num_items != $num_posts ) {
+				return;
+			}
+
+			$_REQUEST['post'] = $wp_query->posts;
+		}
+
+		// Terms
+		if ( $bulk_object_type == 'term' ) {
+			// Current taxomomy
+			$taxonomy = $wp_list_table->screen->taxonomy;
+
+			// Arguments for fetching terms
+			$args = wp_parse_args( $wp_list_table->callback_args, array(
+				'page' => 1,
+				'number' => 20,
+				'search' => '',
+				'hide_empty' => 0
+			) );
+
+			$args['number'] = 0;
+			$args['offset'] = 0;
+			$args['fields'] = 'ids';
+			unset( $args['page'] );
+
+			// Fetch terms
+			$terms = get_terms( $taxonomy, $args );
+
+			if ( $num_items != count( $terms ) ) {
+				return;
+			}
+
+			$_REQUEST['delete_tags'] = $terms;
+		}
 	}
 
+	/**
+	 * Alter the "request" hook query parameter to include all posts.
+	 * Hook is intended for temporary use, i.e. it should be added directly before and removed directly after a function call
+	 * such as wp_edit_posts_query().
+	 *
+	 * @see action:request
+	 */
 	public function request_all_ids( $query_vars ) {
 		$query_vars['posts_per_page'] = -1;
 		$query_vars['fields'] = 'ids';
