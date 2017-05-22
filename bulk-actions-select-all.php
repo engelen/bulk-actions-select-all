@@ -94,7 +94,7 @@ class BASA {
 		add_action( 'init', array( $this, 'localize' ), 3 );
 		
 		// Library
-		require_once BASA_PLUGIN_DIR . 'library/admin.php';
+		require_once BASA_PLUGIN_DIR . 'library/Admin.php';
 		
 		if ( is_admin() ) {
 			$this->admin();
