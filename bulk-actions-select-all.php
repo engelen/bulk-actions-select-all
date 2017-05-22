@@ -98,6 +98,10 @@ class BASA {
 		
 		if ( is_admin() ) {
 			$this->admin();
+
+			// Load admin feedback class
+			require_once BASA_PLUGIN_DIR . 'library/AdminFeedback.php';
+			new BASA_AdminFeedback();
 		}
 		
 		// Plugin upgrade
