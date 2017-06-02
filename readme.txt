@@ -7,7 +7,7 @@ Stable tag: 1.1.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Adds an option to the admin posts and terms overviews to select all items (instead of just items on the current page) to bulk delete/restore posts and bulk delete terms. Supports CPTs and custom taxonomies.
+Adds an option to the admin posts and terms overview pages to select all items (instead of just the ones on the current page) to apply bulk actions. "Trash", "Restore", "Delete", and custom bulk actions are supported. Supports both CPTs and custom taxonomies.
 
 == Description ==
 

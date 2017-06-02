@@ -2,7 +2,7 @@
 /*
 Plugin Name: Bulk Actions Select All
 Version: 1.1.1
-Description: Adds an option to the admin posts overview page to select all posts (instead of just the ones on the current page) to bulk trash, restore and delete posts
+Description: Adds an option to the admin posts and terms overview pages to select all items (instead of just the ones on the current page) to apply bulk actions. "Trash", "Restore", "Delete", and custom bulk actions are supported.
 Author: Jesper van Engelen
 Author URI: http://jespervanengelen.com
 Text Domain: basa
