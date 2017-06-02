@@ -25,8 +25,6 @@ class BASA_AdminFeedback {
 	 * @return bool Whether the feedback notice should be displayed
 	 */
 	public function is_feedback_notice_active() {
-		return true;
-
 		// Check whether the current user has sufficient capabilities for the notice to be displayed
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return false;
