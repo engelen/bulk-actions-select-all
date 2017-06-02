@@ -37,6 +37,11 @@ For manual installation, please download the plugin and follow these steps:
 
 == Changelog ==
 
+= 1.1.1 =
+* Added support for custom bulk actions
+* Added feedback notification for feature suggestions etc.
+* Fixed colspan issue when dynamically toggling columns' visibility
+
 = 1.1 =
 * Added support for bulk selection of terms
 * Commenting additions to functions and methods
