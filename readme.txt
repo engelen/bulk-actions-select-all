@@ -11,7 +11,7 @@ Adds an option to the admin posts and terms overview pages to select all items (
 
 == Description ==
 
-Bulk Actions For All Posts adds an option to the posts overview in the WordPress Admin to select "All Posts". By default, WordPress only allows you to select the posts on the current page.
+**Bulk Actions: Select All** adds an option to the posts and taxonomy terms overviews in the WordPress Admin to select "All Entries". By default, WordPress only allows you to select the posts/terms on the current page.
 
 = Supported content types =
 The plugin works for posts, pages and custom post types. Furthermore, it supports categories, tags and custom taxonomies. At this point, it doesn't support comments and other object types besides post types and taxonomies.
